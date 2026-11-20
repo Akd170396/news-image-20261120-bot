@@ -1,30 +1,20 @@
-// Entry program for make.fun news-image-20261120.
-// Copies the pre-rendered entry.png (drawn by render.py) to /output/entry.png.
-// Node 22, standard library only, no network. Deterministic: same bytes every run.
-
-import { copyFileSync, existsSync, mkdirSync, statSync } from "node:fs";
+// news-image-20261120 entrypoint (round 2).
+// Copies the pre-rendered infographic to /output/entry.png.
+// Node 22, standard library only, no network, deterministic.
+import { copyFileSync, mkdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const source = join(here, "entry.png");
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
-const target = join(outDir, "entry.png");
-
-if (!existsSync(source)) {
-  console.error("entry.png not found next to main.ts");
-  process.exit(1);
-}
+const src = join(here, "entry.png");
+const outDir = "/output";
+const dst = join(outDir, "entry.png");
 
 mkdirSync(outDir, { recursive: true });
-copyFileSync(source, target);
+copyFileSync(src, dst);
 
-// Guard against a truncated copy: the output must be byte-identical in size.
-const sourceSize = statSync(source).size;
-const targetSize = statSync(target).size;
-if (sourceSize !== targetSize) {
-  console.error(`copy mismatch: source ${sourceSize} bytes, target ${targetSize} bytes`);
-  process.exit(1);
+const bytes = statSync(dst).size;
+if (bytes === 0 || bytes > 1024 * 1024) {
+  throw new Error(`entry.png size ${bytes} outside 1..1048576 bytes`);
 }
-
-console.log(`entry.png written to ${target} (${targetSize} bytes)`);
+console.log(`entry.png -> ${dst} (${bytes} bytes)`);
